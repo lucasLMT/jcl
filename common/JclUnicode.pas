@@ -874,6 +874,7 @@ const
 
 {$IFNDEF UNICODE_RTL_DATABASE}
 
+{$IFDEF MSWINDOWS}
 type
   TWideStrings = class;
 
@@ -1336,6 +1337,7 @@ type
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
     property OnChanging: TNotifyEvent read FOnChanging write FOnChanging;
   end;
+{$ENDIF MSWINDOWS}
 
 {$ENDIF ~UNICODE_RTL_DATABASE}
 
@@ -1403,8 +1405,9 @@ function WideLowerCase(C: WideChar): WideString; overload; {$IFDEF SUPPORTS_INLI
 function WideLowerCase(const S: WideString): WideString; overload; {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF SUPPORTS_INLINE}
 function WideUpperCase(C: WideChar): WideString; overload; {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF SUPPORTS_INLINE}
 function WideUpperCase(const S: WideString): WideString; overload; {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF SUPPORTS_INLINE}
-
+{$IFDEF MSWINDOWS}
 function WideSameText(const Str1, Str2: WideString): Boolean;
+{$ENDIF}
 function WideTrim(const S: WideString): WideString;
 function WideTrimLeft(const S: WideString): WideString;
 function WideTrimRight(const S: WideString): WideString;
@@ -1546,12 +1549,15 @@ function UnicodeIsVariationSelector(C: UCS4): Boolean;
 {$ENDIF ~UNICODE_RTL_DATABASE}
 
 // Utility functions
+{$IFDEF MSWINDOWS}
 function CharSetFromLocale(Language: LCID): Byte;
 function GetCharSetFromLocale(Language: LCID; out FontCharSet: Byte): Boolean;
 function CodePageFromLocale(Language: LCID): Word;
+{$ENDIF MSWINDOWS}
 function CodeBlockName(const CB: TUnicodeBlock): string;
 function CodeBlockRange(const CB: TUnicodeBlock): TUnicodeBlockRange;
 function CodeBlockFromChar(const C: UCS4): TUnicodeBlock;
+{$IFDEF MSWINDOWS}
 function KeyboardCodePage: Word;
 function KeyUnicode(C: Char): WideChar;
 function StringToWideStringEx(const S: AnsiString; CodePage: Word): WideString;
@@ -1563,6 +1569,7 @@ type
 
 var
   WideCompareText: TCompareFunc;
+{$ENDIF MSWINDOWS}
 
 type
   EJclUnicodeError = class(EJclError);
@@ -2593,6 +2600,7 @@ begin
   Composite := Codes[0];
 end;
 
+{$IFDEF MSWINDOWS}
 //=== { TSearchEngine } ======================================================
 
 constructor TSearchEngine.Create(AOwner: TWideStrings);
@@ -3163,6 +3171,7 @@ procedure TUTBMSearch.FindPrepare(Pattern: PWideChar; PatternLength: SizeInt; Op
 begin
   Compile(Pattern, PatternLength, Options);
 end;
+{$ENDIF MSWINDOWS}
 
 //----------------- Unicode RE search core ---------------------------------------------------------
 
@@ -3205,6 +3214,7 @@ const
 
   _URE_NOOP = $FFFF;
 
+{$IFDEF MSWINDOWS}
 //----------------- TURESearch ---------------------------------------------------------------------
 
 procedure TURESearch.Clear;
@@ -6264,6 +6274,7 @@ begin
   if Sorted then
     Sort;
 end;
+{$ENDIF MSWINDOWS}
 
 {$ENDIF ~UNICODE_RTL_DATABASE}
 
@@ -6762,6 +6773,7 @@ end;
 
 {$ENDIF ~UNICODE_RTL_DATABASE}
 
+{$IFDEF MSWINDOWS}
 function WideSameText(const Str1, Str2: WideString): Boolean;
 // Compares both strings case-insensitively and returns True if both are equal, otherwise False is returned.
 begin
@@ -6769,6 +6781,7 @@ begin
   if Result then
     Result := StrICompW(PWideChar(Str1), PWideChar(Str2)) = 0;
 end;
+{$ENDIF MSWINDOWS}
 
 //----------------- general purpose case mapping ---------------------------------------------------
 
@@ -7729,6 +7742,7 @@ end;
 // As usual, lpSrc has been translated to a var parameter. But this does not work in
 // our case, hence the redeclaration of the function with a pointer as first parameter.
 
+{$IFDEF MSWINDOWS}
 function TranslateCharsetInfoEx(lpSrc: SizeInt; out lpCs: TCharsetInfo; dwFlags: DWORD): BOOL; stdcall;
   external 'gdi32.dll' name 'TranslateCharsetInfo';
 
@@ -7780,6 +7794,7 @@ function KeyUnicode(C: Char): WideChar;
 begin
   MultiByteToWideChar(KeyboardCodePage, MB_USEGLYPHCHARS, @C, 1, @Result, 1);
 end;
+{$ENDIF MSWINDOWS}
 
 function CodeBlockRange(const CB: TUnicodeBlock): TUnicodeBlockRange;
 // http://www.unicode.org/Public/5.0.0/ucd/Blocks.txt
@@ -7827,7 +7842,7 @@ begin
   end;
 end;
 
-
+{$IFDEF MSWINDOWS}
 function CompareTextWin95(const W1, W2: WideString; Locale: LCID): SizeInt;
 // special comparation function for Win9x since there's no system defined
 // comparation function, returns -1 if W1 < W2, 0 if W1 = W2 or 1 if W1 > W2
@@ -7882,6 +7897,7 @@ function TranslateString(const S: AnsiString; CP1, CP2: Word): AnsiString;
 begin
   Result:= WideStringToStringEx(StringToWideStringEx(S, CP1), CP2);
 end;
+{$ENDIF MSWINDOWS}
 
 function UCS4Array(Ch: UCS4): TUCS4Array;
 begin
@@ -7953,6 +7969,7 @@ begin
   Result := (Length(Left) = 1) and (Left[0] = Ord(Right));
 end;
 
+{$IFDEF MSWINDOWS}
 procedure PrepareUnicodeData;
 // Prepares structures which are globally needed.
 begin
@@ -7965,6 +7982,7 @@ begin
   else
     @WideCompareText := @CompareTextWin95;
 end;
+{$ENDIF MSWINDOWS}
 
 procedure FreeUnicodeData;
 // Frees all data which has been allocated and which is not automatically freed by Delphi.
@@ -7975,7 +7993,9 @@ begin
 end;
 
 initialization
+  {$IFDEF MSWINDOWS}
   PrepareUnicodeData;
+  {$ENDIF MSWINDOWS}
   {$IFDEF UNITVERSIONING}
   RegisterUnitVersion(HInstance, UnitVersioning);
   {$ENDIF UNITVERSIONING}
@@ -7984,6 +8004,9 @@ finalization
   {$IFDEF UNITVERSIONING}
   UnregisterUnitVersion(HInstance);
   {$ENDIF UNITVERSIONING}
+  {$IFDEF MSWINDOWS}
   FreeUnicodeData;
+  {$ENDIF MSWINDOWS}
 
 end.
+

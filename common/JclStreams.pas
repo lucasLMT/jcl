@@ -93,7 +93,12 @@ type
     constructor Create(AHandle: THandle);
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
+    {$IFDEF MSWINDOWS}
     function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+    {$ENDIF MSWINDOWS}
+    {$IFDEF HAS_UNIT_LIBC}
+    function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
+    {$ENDIF HAS_UNIT_LIBC}
     property Handle: THandle read FHandle;
   end;
 
@@ -516,6 +521,7 @@ type
 
   TJclStringStreamClass = class of TJclStringStream;
 
+  {$IFDEF MSWINDOWS}
   TJclAnsiStream = class(TJclStringStream)
   private
     FCodePage: Word;
@@ -528,6 +534,7 @@ type
     constructor Create(AStream: TStream; AOwnsStream: Boolean = False); override;
     property CodePage: Word read FCodePage write FCodePage;
   end;
+  {$ENDIF}
 
   TJclUTF8Stream = class(TJclStringStream)
   protected
@@ -551,6 +558,7 @@ type
 
   TJclStringEncoding = (seAnsi, seUTF8, seUTF16, seAuto);
 
+  {$IFDEF MSWINDOWS}
   TJclAutoStream = class(TJclStringStream)
   private
     FCodePage: Word;
@@ -567,6 +575,7 @@ type
     property CodePage: Word read FCodePage write SetCodePage;
     property Encoding: TJclStringEncoding read FEncoding;
   end;
+  {$ENDIF}
 
 // buffered copy of all available bytes from Source to Dest
 // returns the number of bytes that were copied
@@ -790,9 +799,9 @@ begin
   if (Count <= 0) or not ReadFile(Handle, Buffer, DWORD(Count), DWORD(Result), nil) then
     Result := 0;
   {$ENDIF MSWINDOWS}
-  {$IFDEF LINUX}
+  {$IFDEF HAS_UNIT_LIBC}
   Result := __read(Handle, Buffer, Count);
-  {$ENDIF LINUX}
+  {$ENDIF HAS_UNIT_LIBC}
 end;
 
 function TJclHandleStream.Write(const Buffer; Count: Longint): Longint;
@@ -802,9 +811,9 @@ begin
   if (Count <= 0) or not WriteFile(Handle, Buffer, DWORD(Count), DWORD(Result), nil) then
     Result := 0;
   {$ENDIF MSWINDOWS}
-  {$IFDEF LINUX}
+  {$IFDEF HAS_UNIT_LIBC}
   Result := __write(Handle, Buffer, Count);
-  {$ENDIF LINUX}
+  {$ENDIF HAS_UNIT_LIBC}
 end;
 
 {$IFDEF MSWINDOWS}
@@ -831,14 +840,14 @@ begin
     Result := Offs.Offset64;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF LINUX}
+{$IFDEF HAS_UNIT_LIBC}
 function TJclHandleStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
 const
   SeekOrigins: array [TSeekOrigin] of Cardinal = ( SEEK_SET {soBeginning}, SEEK_CUR {soCurrent}, SEEK_END {soEnd} );
 begin
   Result := lseek(Handle, Offset, SeekOrigins[Origin]);
 end;
-{$ENDIF LINUX}
+{$ENDIF HAS_UNIT_LIBC}
 
 procedure TJclHandleStream.SetSize(const NewSize: Int64);
 begin
@@ -847,10 +856,10 @@ begin
   if not SetEndOfFile(Handle) then
     RaiseLastOSError;
   {$ENDIF MSWINDOWS}
-  {$IFDEF LINUX}
+  {$IFDEF HAS_UNIT_LIBC}
   if ftruncate(Handle, Position) = -1 then
     raise EJclStreamError.CreateRes(@RsStreamsSetSizeError);
-  {$ENDIF LINUX}
+  {$ENDIF HAS_UNIT_LIBC}
 end;
 
 //=== { TJclFileStream } =====================================================
@@ -865,9 +874,9 @@ const
 begin
   if Mode = fmCreate then
   begin
-    {$IFDEF LINUX}
+    {$IFDEF HAS_UNIT_LIBC}
     H := open(PChar(FileName), O_CREAT or O_RDWR, Rights);
-    {$ENDIF LINUX}
+    {$ENDIF HAS_UNIT_LIBC}
     {$IFDEF MSWINDOWS}
     H := CreateFile(PChar(FileName), GENERIC_READ or GENERIC_WRITE,
       0, nil, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -891,9 +900,9 @@ begin
   if Handle <> INVALID_HANDLE_VALUE then
     CloseHandle(Handle);
   {$ENDIF MSWINDOWS}
-  {$IFDEF LINUX}
+  {$IFDEF HAS_UNIT_LIBC}
   __close(Handle);
-  {$ENDIF LINUX}
+  {$ENDIF HAS_UNIT_LIBC}
   inherited Destroy;
 end;
 
@@ -2853,6 +2862,7 @@ end;
 
 //=== { TJclAnsiStream } ======================================================
 
+{$IFDEF MSWINDOWS}
 constructor TJclAnsiStream.Create(AStream: TStream; AOwnsStream: Boolean);
 begin
   inherited Create(AStream, AOwnsStream);
@@ -2893,6 +2903,7 @@ begin
   else
     Result := AnsiSetNextCharToStream(S, FCodePage, Ch);
 end;
+{$ENDIF MSWINDOWS}
 
 //=== { TJclUTF8Stream } ======================================================
 
@@ -2964,6 +2975,7 @@ end;
 
 //=== { TJclAutoStream } ======================================================
 
+{$IFDEF MSWINDOWS}
 constructor TJclAutoStream.Create(AStream: TStream; AOwnsStream: Boolean);
 var
   I, MaxLength, ReadLength: Integer;
@@ -3112,6 +3124,7 @@ begin
   Result := 0;
   InvalidateBuffers;
 end;
+{$ENDIF MSWINDOWS}
 
 {$IFDEF UNITVERSIONING}
 initialization

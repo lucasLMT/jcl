@@ -319,7 +319,9 @@ function CharIsUpper(const C: Char): Boolean; {$IFDEF SUPPORTS_INLINE} inline; {
 function CharIsValidIdentifierLetter(const C: Char): Boolean; {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
 function CharIsWhiteSpace(const C: Char): Boolean; {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
 function CharIsWildcard(const C: Char): Boolean; {$IFDEF SUPPORTS_INLINE} inline; {$ENDIF}
+{$IFDEF MSWINDOWS}
 function CharType(const C: Char): Word;
+{$ENDIF}
 
 // Character Transformation Routines
 function CharHex(const C: Char): Byte;
@@ -2962,6 +2964,7 @@ begin
   end;
 end;
 
+{$IFDEF MSWINDOWS}
 function CharType(const C: Char): Word;
 begin
   {$IFDEF UNICODE_RTL_DATABASE}
@@ -2970,6 +2973,7 @@ begin
   Result := StrCharTypes[C];
   {$ENDIF ~UNICODE_RTL_DATABASE}
 end;
+{$ENDIF}
 
 //=== PCharVector ============================================================
 
@@ -5390,12 +5394,12 @@ begin
   end;
 end;
 
-function CompareNaturalStr(const S1, S2: string): SizeInt; overload;
+function CompareNaturalStr(const S1, S2: string): SizeInt;
 begin
   Result := CompareNatural(S1, S2, False);
 end;
 
-function CompareNaturalText(const S1, S2: string): SizeInt; overload;
+function CompareNaturalText(const S1, S2: string): SizeInt;
 begin
   Result := CompareNatural(S1, S2, True);
 end;

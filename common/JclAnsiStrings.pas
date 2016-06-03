@@ -587,6 +587,9 @@ uses
   {$IFDEF SUPPORTS_UNICODE}
   RtlConsts,
   {$ENDIF SUPPORTS_UNICODE}
+  {$IFDEF FPC}
+  Character,
+  {$ENDIF}
   JclLogic, JclResources, JclStreams, JclSynch, JclSysUtils;
 
 //=== Internal ===============================================================
@@ -600,6 +603,27 @@ type
 
 const
   AnsiStrRecSize  = SizeOf(TAnsiStrRec);     // size of the AnsiString header rec
+
+{$IFDEF LINUX}
+function IsXDigit(character: AnsiChar): boolean;
+begin
+ Result := (character in ['0'..'9']) or (character in ['A'..'F']) or (character in ['a'..'f']);
+end;
+
+function IsSpace(character: AnsiChar): boolean;
+const
+  SpaceCharacters = [$9, $a, $b, $c, $d, $20, $a0];
+begin
+  Result := Byte(character) in SpaceCharacters;
+end;
+
+function IsBlank(character: AnsiChar): boolean;
+const
+  BlankCharacters = [$9, $20, $a0];
+begin
+  Result := Byte(character) in BlankCharacters;
+end;
+{$ENDIF LINUX}
 
 procedure LoadCharTypes;
 var
@@ -615,23 +639,23 @@ begin
     {$ENDIF MSWINDOWS}
     {$IFDEF LINUX}
     CurrType := 0;
-    if isupper(Byte(CurrChar)) <> 0 then
+    if IsUpper(CurrChar) then
       CurrType := CurrType or C1_UPPER;
-    if islower(Byte(CurrChar)) <> 0 then
+    if IsLower(CurrChar) then
       CurrType := CurrType or C1_LOWER;
-    if isdigit(Byte(CurrChar)) <> 0 then
+    if IsDigit(CurrChar) then
       CurrType := CurrType or C1_DIGIT;
-    if isspace(Byte(CurrChar)) <> 0 then
+    if IsSpace(CurrChar) then
       CurrType := CurrType or C1_SPACE;
-    if ispunct(Byte(CurrChar)) <> 0 then
+    if IsPunctuation(CurrChar) then
       CurrType := CurrType or C1_PUNCT;
-    if iscntrl(Byte(CurrChar)) <> 0 then
+    if IsControl(CurrChar) then
       CurrType := CurrType or C1_CNTRL;
-    if isblank(Byte(CurrChar)) <> 0 then
+    if IsBlank(CurrChar) then
       CurrType := CurrType or C1_BLANK;
-    if isxdigit(Byte(CurrChar)) <> 0 then
+    if IsXDigit(CurrChar) then
       CurrType := CurrType or C1_XDIGIT;
-    if isalpha(Byte(CurrChar)) <> 0 then
+    if IsLetterOrDigit(CurrChar) or IsSymbol(CurrChar) then
       CurrType := CurrType or C1_ALPHA;
     {$DEFINE CHAR_TYPES_INITIALIZED}
     {$ENDIF LINUX}
@@ -658,8 +682,8 @@ begin
       {$DEFINE CASE_MAP_INITIALIZED}
       {$ENDIF MSWINDOWS}
       {$IFDEF LINUX}
-      LoCaseChar := AnsiChar(tolower(Byte(CurrChar)));
-      UpCaseChar := AnsiChar(toupper(Byte(CurrChar)));
+      LoCaseChar := AnsiChar(ToLower(CurrChar));
+      UpCaseChar := AnsiChar(ToUpper(CurrChar));
       {$DEFINE CASE_MAP_INITIALIZED}
       {$ENDIF LINUX}
       {$IFNDEF CASE_MAP_INITIALIZED}
@@ -4088,12 +4112,12 @@ begin
   end;
 end;
 
-function AnsiCompareNaturalStr(const S1, S2: AnsiString): SizeInt; overload;
+function AnsiCompareNaturalStr(const S1, S2: AnsiString): SizeInt;
 begin
   Result := AnsiCompareNatural(S1, S2, False);
 end;
 
-function AnsiCompareNaturalText(const S1, S2: AnsiString): SizeInt; overload;
+function AnsiCompareNaturalText(const S1, S2: AnsiString): SizeInt;
 begin
   Result := AnsiCompareNatural(S1, S2, True);
 end;

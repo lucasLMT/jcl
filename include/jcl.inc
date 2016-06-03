@@ -37,10 +37,11 @@
 {$LONGSTRINGS ON}     // Long strings
 {$WRITEABLECONST OFF} // Read-only typed constants
 {$TYPEDADDRESS OFF}   // Type checked pointers off
-{$LOCALSYMBOLS ON}    // Local symbol information
-{$DEFINITIONINFO ON}  // Symbol definition information
-{$REFERENCEINFO ON}   // Symbol reference information
-
+{$IFNDEF FPC}
+  {$LOCALSYMBOLS ON}    // Local symbol information
+  {$DEFINITIONINFO ON}  // Symbol definition information
+  {$REFERENCEINFO ON}   // Symbol reference information
+{$ENDIF FPC}
 {$I jedi\jedi.inc} // Pull in the JCL/J-VCL shared directives
 
 {$IFNDEF JEDI_INC}
@@ -622,12 +623,15 @@ ALERT_jedi_inc_incompatible
   {$DEFINE DEBUG_NO_TD32}
 {$ENDIF FPC}
 
-{$IF CompilerVersion < 23}
-{$DEFINE JCL_PCRE}
-{$DEFINE JCL_PCRE_8}
-{$DEFINE PCRE_LINKONREQUEST}
-{$DEFINE PCRE_8}
+{$IFNDEF FPC}
+  {$IF CompilerVersion < 23}
+    {$DEFINE JCL_PCRE}
+    {$DEFINE JCL_PCRE_8}
+    {$DEFINE PCRE_LINKONREQUEST}
+    {$DEFINE PCRE_8}
 
-{$UNDEF PCRE_RTL}
-{$UNDEF PCRE_16}
-{$IFEND}
+    {$UNDEF PCRE_RTL}
+    {$UNDEF PCRE_16}
+  {$IFEND}
+{$ENDIF FPC}
+

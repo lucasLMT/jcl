@@ -73,6 +73,7 @@ uses
   Libc,
   {$ENDIF HAS_UNIT_LIBC}
   {$IFDEF FPC}
+  types,
   {$IFDEF UNIX}
   {$IFNDEF LINUX}
   Unix,
@@ -138,8 +139,10 @@ function SecondsToMSecs(Seconds: Integer): Integer;
 function TimeOfDateTimeToSeconds(DateTime: TDateTime): Integer;
 function TimeOfDateTimeToMSecs(DateTime: TDateTime): Integer;
 
+{$IFDEF HAS_UNIT_LIBC}
 function DateTimeToLocalDateTime(DateTime: TDateTime): TDateTime;
 function LocalDateTimeToDateTime(DateTime: TDateTime): TDateTime;
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 function DateTimeToDosDateTime(const DateTime: TDateTime): TDosDateTime;
@@ -148,6 +151,8 @@ function DateTimeToSystemTime(DateTime: TDateTime): TSystemTime; overload;
 procedure DateTimeToSystemTime(DateTime: TDateTime; out SysTime: TSystemTime); overload;
 
 function LocalDateTimeToFileTime(DateTime: TDateTime): FileTime;
+function LocalDateTimeToDateTime(DateTime: TDateTime): TDateTime;
+function DateTimeToLocalDateTime(DateTime: TDateTime): TDateTime;
 {$ENDIF MSWINDOWS}
 
 function DosDateTimeToDateTime(const DosTime: TDosDateTime): TDateTime;
@@ -231,6 +236,9 @@ const
 implementation
 
 uses
+  {$IFDEF UNIX}
+  baseunix ,
+  {$ENDIF UNIX}
   JclSysUtils;
 
 const
@@ -263,7 +271,7 @@ const
   //   7 : first full week
   //ISOFirstWeekMinDays = 4;
 
-function EncodeDate(const Year: Integer; Month, Day: Word): TDateTime; overload;
+function EncodeDate(const Year: Integer; Month, Day: Word): TDateTime;
 begin
   if (Year > 0) and (Year < EncodeDateMaxYear + 1) then
     Result := {$IFDEF HAS_UNITSCOPE}System.{$ENDIF}SysUtils.EncodeDate(Year, Month, Day)
@@ -677,7 +685,7 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function DateTimeToLocalDateTime(DateTime: TDateTime): TDateTime;
 var
   {$IFDEF LINUX}
@@ -696,7 +704,7 @@ begin
   {$ENDIF ~LINUX}
   Result  := ((DateTime * SecsPerDay) - Offset) / SecsPerDay;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 function LocalDateTimeToDateTime(DateTime: TDateTime): TDateTime;
@@ -715,7 +723,7 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function LocalDateTimeToDateTime(DateTime: TDateTime): TDateTime;
 var
   {$IFDEF LINUX}
@@ -734,7 +742,7 @@ begin
   {$ENDIF ~LINUX}
   Result  := ((DateTime * SecsPerDay) + Offset) / SecsPerDay;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 function HoursToMSecs(Hours: Integer): Integer;
 begin

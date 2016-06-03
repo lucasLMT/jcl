@@ -83,10 +83,12 @@ function PAnsiCharOrNil(const S: AnsiString): PAnsiChar;
 function PWideCharOrNil(const W: WideString): PWideChar;
 {$ENDIF SUPPORTS_WIDESTRING}
 
+{$IFDEF MSWINDOWS}
 function SizeOfMem(const APointer: Pointer): Integer;
 
 function WriteProtectedMemory(BaseAddress, Buffer: Pointer; Size: Cardinal;
   out WrittenBytes: Cardinal): Boolean;
+{$ENDIF}
 
 // Guards
 type
@@ -329,7 +331,9 @@ type
 function GetVirtualMethodCount(AClass: TClass): Integer;
 {$ENDIF ~FPC}
 function GetVirtualMethod(AClass: TClass; const Index: Integer): Pointer;
+{$IFDEF MSWINDOWS}
 procedure SetVirtualMethod(AClass: TClass; const Index: Integer; const Method: Pointer);
+{$ENDIF}
 
 // Dynamic Methods
 type
@@ -397,7 +401,9 @@ function GetMethodTable(AClass: TClass): PMethodTable;
 function GetMethodEntry(MethodTable: PMethodTable; Index: Integer): PMethodEntry;
 
 // Class Parent
+{$IFDEF MSWINDOWS}
 procedure SetClassParent(AClass: TClass; NewClassParent: TClass);
+{$ENDIF}
 function GetClassParent(AClass: TClass): TClass;
 
 {$IFNDEF FPC}
@@ -498,6 +504,7 @@ type
 const
   ABORT_EXIT_CODE = {$IFDEF MSWINDOWS} ERROR_CANCELLED {$ELSE} 1223 {$ENDIF};
 
+{$IFDEF MSWINDOWS}
 function Execute(const CommandLine: string; OutputLineCallback: TTextHandler; RawOutput: Boolean = False;
   AbortPtr: PBoolean = nil; ProcessPriority: TJclProcessPriority = ppNormal): Cardinal; overload;
 function Execute(const CommandLine: string; AbortEvent: TJclEvent;
@@ -506,7 +513,6 @@ function Execute(const CommandLine: string; var Output: string; RawOutput: Boole
   AbortPtr: PBoolean = nil; ProcessPriority: TJclProcessPriority = ppNormal): Cardinal; overload;
 function Execute(const CommandLine: string; AbortEvent: TJclEvent;
   var Output: string; RawOutput: Boolean = False; ProcessPriority: TJclProcessPriority = ppNormal): Cardinal; overload;
-
 function Execute(const CommandLine: string; OutputLineCallback, ErrorLineCallback: TTextHandler;
   RawOutput: Boolean = False; RawError: Boolean = False; AbortPtr: PBoolean = nil; ProcessPriority: TJclProcessPriority = ppNormal): Cardinal; overload;
 function Execute(const CommandLine: string; AbortEvent: TJclEvent;
@@ -515,6 +521,7 @@ function Execute(const CommandLine: string; var Output, Error: string;
   RawOutput: Boolean = False; RawError: Boolean = False; AbortPtr: PBoolean = nil; ProcessPriority: TJclProcessPriority = ppNormal): Cardinal; overload;
 function Execute(const CommandLine: string; AbortEvent: TJclEvent;
   var Output, Error: string; RawOutput: Boolean = False; RawError: Boolean = False; ProcessPriority: TJclProcessPriority = ppNormal): Cardinal; overload;
+{$ENDIF}
 
 type
 {$HPPEMIT 'namespace Jclsysutils'}
@@ -542,6 +549,7 @@ type
 
   EJclCommandLineToolError = class(EJclError);
 
+  {$IFDEF MSWINDOWS}
   TJclCommandLineTool = class(TInterfacedObject, IJclCommandLineTool)
   private
     FExeName: string;
@@ -564,9 +572,12 @@ type
     property OutputCallback: TTextHandler read GetOutputCallback write SetOutputCallback;
     property Output: string read GetOutput;
   end;
+  {$ENDIF}
 
 // Console Utilities
+{$IFDEF MSWINDOWS}
 function ReadKey: Char;
+{$ENDIF}
 
 // Loading of modules (DLLs)
 type
@@ -631,8 +642,10 @@ procedure ListSetItem(var List: string; const Separator: string;
 function ListItemIndex(const List, Separator, Item: string): Integer;
 
 // RTL package information
+{$IFDEF MSWINDOWS}
 function SystemTObjectInstance: TJclAddr;
 function IsCompiledWithPackages: Boolean;
+{$ENDIF MSWINDOWS}
 
 // GUID
 function JclGUIDToString(const GUID: TGUID): string;
@@ -665,6 +678,7 @@ type
   TFileHandle = THandle;
   {$ENDIF ~BORLAND}
 
+  {$IFDEF MSWINDOWS}
   TJclSimpleLog = class (TObject)
   private
     FDateTimeFormatStr: String;
@@ -694,6 +708,7 @@ type
     property LoggingActive: Boolean read FLoggingActive write FLoggingActive default True;
     property LogOpen: Boolean read GetLogOpen;
   end;
+  {$ENDIF MSWINDOWS}
 
 type
   TJclFormatSettings = class
@@ -769,12 +784,16 @@ var
   JclFormatSettings: TJclFormatSettings;
 
 // Procedure to initialize the SimpleLog Variable
+{$IFDEF MSWINDOWS}
 procedure InitSimpleLog(const ALogFileName: string = ''; AOpenLog: Boolean = true);
+{$ENDIF}
 
 // Global Variable to make it easier for an application wide log handling.
 // Must be initialized with InitSimpleLog before using
+{$IFDEF MSWINDOWS}
 var
   SimpleLog : TJclSimpleLog;
+{$ENDIF}
 
 
 // Validates if then variant value is null or is empty
@@ -816,7 +835,13 @@ uses
   {$ENDIF HAS_UNIT_ANSISTRINGS}
   {$ENDIF ~HAS_UNITSCOPE}
   JclFileUtils, JclMath, JclResources, JclStrings,
-  JclStringConversions, JclSysInfo, JclWin32;
+  {$IFDEF MSWINDOWS}
+  JclWin32,
+  {$ENDIF}
+  {$IFDEF UNIX}
+  baseunix, dl,
+  {$ENDIF UNIX}
+  JclStringConversions, JclSysInfo;
 
 // memory initialization
 procedure ResetMemory(out P; Size: Longint);
@@ -896,7 +921,7 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-{$IFDEF LINUX}
+{$IFDEF HAS_UNIT_LIBC}
 function SizeOfMem(const APointer: Pointer): Integer;
 begin
   if IsMemoryManagerSet then
@@ -909,11 +934,11 @@ begin
       Result := 0;
   end;
 end;
-{$ENDIF LINUX}
+{$ENDIF HAS_UNIT_LIBC}
 
+{$IFDEF MSWINDOWS}
 function WriteProtectedMemory(BaseAddress, Buffer: Pointer;
   Size: Cardinal; out WrittenBytes: Cardinal): Boolean;
-{$IFDEF MSWINDOWS}
 var
   OldProtect, Dummy: Cardinal;
 begin
@@ -937,7 +962,9 @@ begin
   Result := WrittenBytes = Size;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF LINUX}
+{$IFDEF HAS_UNIT_LIBC}
+function WriteProtectedMemory(BaseAddress, Buffer: Pointer;
+  Size: Cardinal; out WrittenBytes: Cardinal): Boolean;
 { TODO -cHelp : Author: Andreas Hausladen }
 { TODO : Works so far, but causes app to hang on termination }
 var
@@ -974,7 +1001,7 @@ begin
   // do nothing
 end;
 
-{$ENDIF LINUX}
+{$ENDIF HAS_UNIT_LIBC}
 
 // Guards
 
@@ -1861,6 +1888,7 @@ end;
 // Virtual Methods
 // Helper method
 
+{$IFDEF MSWINDOWS}
 procedure SetVMTPointer(AClass: TClass; Offset: Integer; Value: Pointer);
 var
   WrittenBytes: DWORD;
@@ -1882,6 +1910,7 @@ begin
   // (outchy) done by WriteProtectedMemory
   // FlushInstructionCache{$IFDEF MSWINDOWS}(GetCurrentProcess, PatchAddress, SizeOf(Pointer)){$ENDIF};
 end;
+{$ENDIF}
 
 {$IFNDEF FPC}
 function GetVirtualMethodCount(AClass: TClass): Integer;
@@ -1924,10 +1953,12 @@ begin
   {$ENDIF OVERFLOWCHECKS_ON}
 end;
 
+{$IFDEF MSWINDOWS}
 procedure SetVirtualMethod(AClass: TClass; const Index: Integer; const Method: Pointer);
 begin
   SetVMTPointer(AClass, Index * SizeOf(Pointer), Method);
 end;
+{$ENDIF}
 
 function GetDynamicMethodCount(AClass: TClass): Integer; assembler;
 asm
@@ -2114,6 +2145,7 @@ end;
 
 //=== Class Parent methods ===================================================
 
+{$IFDEF MSWINDOWS}
 procedure SetClassParent(AClass: TClass; NewClassParent: TClass);
 var
   WrittenBytes: DWORD;
@@ -2133,6 +2165,7 @@ begin
   // (outchy) done by WriteProtectedMemory
   // FlushInstructionCache{$IFDEF MSWINDOWS}(GetCurrentProcess, PatchAddress, SizeOf(Pointer)){$ENDIF};
 end;
+{$ENDIF}
 
 function GetClassParent(AClass: TClass): TClass; assembler;
 asm
@@ -2678,6 +2711,7 @@ const
 type
   TBuffer = array [0..BufferSize] of AnsiChar;
 
+  {$IFDEF MSWINDOWS}
   TPipeInfo = record
     PipeRead, PipeWrite: THandle;
     Buffer: TBuffer;
@@ -2687,6 +2721,7 @@ type
     Event: TJclEvent;
   end;
   PPipeInfo = ^TPipeInfo;
+  {$ENDIF}
 
 // MuteCRTerminatedLines was "outsourced" from Win32ExecAndRedirectOutput
 
@@ -2728,6 +2763,7 @@ begin
   SetLength(Result, OutPos - 1);
 end;
 
+{$IFDEF MSWINDOWS}
 procedure InternalExecuteProcessLine(const PipeInfo: TPipeInfo; LineEnd: Integer);
 begin
   if PipeInfo.RawOutput or (PipeInfo.Line[LineEnd] <> NativeCarriageReturn) then
@@ -2894,7 +2930,7 @@ function InternalExecute(CommandLine: string; AbortPtr: PBoolean; AbortEvent: TJ
 var
   OutPipeInfo, ErrorPipeInfo: TPipeInfo;
   Index: Cardinal;
-{$IFDEF MSWINDOWS}
+
 var
   StartupInfo: TStartupInfo;
   ProcessInfo: TProcessInformation;
@@ -3084,7 +3120,7 @@ begin
       SetLastError(LastError);
     end;
   end;
-{$ENDIF MSWINDOWS}
+(*
 {$IFDEF UNIX}
 var
   PipeBytesRead: Cardinal;
@@ -3110,6 +3146,7 @@ begin
     wait(nil);
   end;
 {$ENDIF UNIX}
+*)
   if OutPipeInfo.Line <> '' then
     if Assigned(OutPipeInfo.TextHandler) then
       // output wasn't terminated by a line feed...
@@ -3277,11 +3314,12 @@ procedure TJclCommandLineTool.SetOutputCallback(const CallbackMethod: TTextHandl
 begin
   FOutputCallback := CallbackMethod;
 end;
+{$ENDIF MSWINDOWS}
 
 //=== Console Utilities ======================================================
 
-function ReadKey: Char;
 {$IFDEF MSWINDOWS}
+function ReadKey: Char;
 { TODO -cHelp : Contributor: Robert Rossmair }
 var
   Console: TJclConsole;
@@ -3295,7 +3333,8 @@ begin
   Console.Input.Mode := InputMode;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function ReadKey: Char;
 { TODO -cHelp : Donator: Wayne Sherman }
 var
   ReadFileDescriptor: TFDSet;
@@ -3335,7 +3374,7 @@ begin
     tcsetattr(stdin, TCSANOW, SaveTerminalSettings);
   end;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 //=== Loading of modules (DLLs) ==============================================
 
@@ -3513,6 +3552,7 @@ end;
 
 //=== RTL package information ================================================
 
+{$IFDEF MSWINDOWS}
 function SystemTObjectInstance: TJclAddr;
 begin
   Result := ModuleFromAddr(Pointer(System.TObject));
@@ -3522,6 +3562,7 @@ function IsCompiledWithPackages: Boolean;
 begin
   Result := SystemTObjectInstance <> HInstance;
 end;
+{$ENDIF MSWINDOWS}
 
 //=== GUID ===================================================================
 
@@ -3764,6 +3805,7 @@ const
   INVALID_HANDLE_VALUE = 0;
 {$ENDIF LINUX}
 
+{$IFDEF MSWINDOWS}
 constructor TJclSimpleLog.Create(const ALogFileName: string = '');
 begin
   if ALogFileName = '' then
@@ -3954,6 +3996,7 @@ begin
   if AOpenLog then
     SimpleLog.OpenLog;
 end;
+{$ENDIF MSWINDOWS}
 
 function TJclFormatSettings.GetCurrencyDecimals: Byte;
 begin
@@ -4330,7 +4373,9 @@ end;
 
 
 initialization
+  {$IFDEF MSWINDOWS}
   SimpleLog := nil;
+  {$ENDIF}
   {$IFDEF UNITVERSIONING}
   RegisterUnitVersion(HInstance, UnitVersioning);
   {$ENDIF UNITVERSIONING}
@@ -4347,7 +4392,7 @@ finalization
   MMFFinalized := True;
   FreeAndNil(GlobalMMFHandleListCS);
   {$ENDIF THREADSAFE}
-  {$ENDIF MSWINDOWS}
   if Assigned(SimpleLog) then
     FreeAndNil(SimpleLog);
+  {$ENDIF MSWINDOWS}
 end.

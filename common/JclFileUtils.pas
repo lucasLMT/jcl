@@ -132,7 +132,9 @@ function PathAddSeparator(const Path: string): string;
 function PathAddExtension(const Path, Extension: string): string;
 function PathAppend(const Path, Append: string): string;
 function PathBuildRoot(const Drive: Byte): string;
+{$IFDEF MSWINDOWS}
 function PathCanonicalize(const Path: string): string;
+{$ENDIF}
 function PathCommonPrefix(const Path1, Path2: string): Integer;
 {$IFDEF MSWINDOWS}
 function PathCompactPath(const DC: HDC; const Path: string; const Width: Integer;
@@ -141,18 +143,22 @@ function PathCompactPath(const DC: HDC; const Path: string; const Width: Integer
 procedure PathExtractElements(const Source: string; var Drive, Path, FileName, Ext: string);
 function PathExtractFileDirFixed(const S: string): string;
 function PathExtractFileNameNoExt(const Path: string): string;
+{$IFDEF MSWINDOWS}
 function PathExtractPathDepth(const Path: string; Depth: Integer): string;
 function PathGetDepth(const Path: string): Integer;
-{$IFDEF MSWINDOWS}
 function PathGetLongName(const Path: string): string;
 function PathGetShortName(const Path: string): string;
 {$ENDIF MSWINDOWS}
+{$IFNDEF UNIX}
 function PathGetRelativePath(Origin, Destination: string): string;
+{$ENDIF ~UNIX}
 function PathGetTempPath: string;
 function PathIsAbsolute(const Path: string): Boolean;
 function PathIsChild(const Path, Base: string): Boolean;
 function PathIsEqualOrChild(const Path, Base: string): Boolean;
+{$IFDEF MSWINDOWS}
 function PathIsDiskDevice(const Path: string): Boolean;
+{$ENDIF MSWINDOWS}
 function PathIsUNC(const Path: string): Boolean;
 function PathRemoveSeparator(const Path: string): string;
 function PathRemoveExtension(const Path: string): string;
@@ -197,9 +203,11 @@ procedure EnumFiles(const Path: string; HandleFile: TFileHandlerEx;
 procedure EnumFiles(const Path: string; HandleFile: TFileInfoHandlerEx;
   RejectedAttributes: Integer = faRejectedByDefault; RequiredAttributes: Integer = 0;
   Abort: PBoolean = nil); overload;
+{$IFNDEF UNIX}
 procedure EnumDirectories(const Root: string; const HandleDirectory: TFileHandler;
   const IncludeHiddenDirectories: Boolean = False; const SubDirectoriesMask: string = '';
   Abort: PBoolean = nil {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF});
+{$ENDIF ~UNIX}
 {$IFDEF MSWINDOWS}
 procedure CreateEmptyFile(const FileName: string);
 function CloseVolume(var Volume: THandle): Boolean;
@@ -211,11 +219,16 @@ function MoveDirectory(ExistingDirectoryName, NewDirectoryName: string): Boolean
 function DelTree(const Path: string): Boolean;
 function DelTreeEx(const Path: string; AbortOnFailure: Boolean; Progress: TDelTreeProgress): Boolean;
 function DiskInDrive(Drive: Char): Boolean;
-{$ENDIF MSWINDOWS}
 function DirectoryExists(const Name: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): Boolean;
 function FileCreateTemp(var Prefix: string): THandle;
+{$ENDIF MSWINDOWS}
+{$IFDEF HAS_UNIT_LIBC}
+function FileCreateTemp(var Prefix: string): THandle;
+{$ENDIF HAS_UNIT_LIBC}
+{$IFDEF MSWINDOWS}
 function FileBackup(const FileName: string; Move: Boolean = False): Boolean;
 function FileCopy(const ExistingFileName, NewFileName: string; ReplaceExisting: Boolean = False): Boolean;
+{$ENDIF MSWINDOWS}
 function FileDateTime(const FileName: string): TDateTime;
 function FileDelete(const FileName: string; MoveToRecycleBin: Boolean = False): Boolean;
 function FileExists(const FileName: string): Boolean;
@@ -234,18 +247,20 @@ function FileExists(const FileName: string): Boolean;
 /// extention should replace the current extention or should be added at the
 /// end</param>
 /// </param>
+{$IFDEF MSWINDOWS}
 procedure FileHistory(const FileName: string; HistoryPath: string = ''; MaxHistoryCount: Integer = 100; MinFileDate:
     TDateTime = 0; ReplaceExtention: Boolean = true);
 function FileMove(const ExistingFileName, NewFileName: string; ReplaceExisting: Boolean = False): Boolean;
 function FileRestore(const FileName: string): Boolean;
+{$ENDIF}
 function GetBackupFileName(const FileName: string): string;
 function IsBackupFileName(const FileName: string): Boolean;
 function FileGetDisplayName(const FileName: string): string;
+{$IFDEF MSWINDOWS}
 function FileGetGroupName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 function FileGetOwnerName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 function FileGetSize(const FileName: string): Int64;
 function FileGetTempName(const Prefix: string): string;
-{$IFDEF MSWINDOWS}
 function FileGetTypeName(const FileName: string): string;
 {$ENDIF MSWINDOWS}
 function FindUnusedFileName(FileName: string; const FileExt: string; NumberPrefix: string = ''): string;
@@ -258,14 +273,14 @@ function GetFileAgeCoherence(const FileName: string): Boolean;
 procedure GetFileAttributeList(const Items: TStrings; const Attr: Integer);
 {$IFDEF MSWINDOWS}
 procedure GetFileAttributeListEx(const Items: TStrings; const Attr: Integer);
-{$ENDIF MSWINDOWS}
 function GetFileInformation(const FileName: string; out FileInfo: TSearchRec): Boolean; overload;
 function GetFileInformation(const FileName: string): TSearchRec; overload;
-{$IFDEF UNIX}
+{$ENDIF MSWINDOWS}
+{$IFDEF HAS_UNIT_LIBC}
 function GetFileStatus(const FileName: string; out StatBuf: TStatBuf64;
   const ResolveSymLinks: Boolean): Integer;
-{$ENDIF UNIX}
-{$IFDEF MSWINDOWS}
+{$ENDIF HAS_UNIT_LIBC}
+{$IFDEF MSWINDOWS}  
 function GetFileLastWrite(const FileName: string): TFileTime; overload;
 function GetFileLastWrite(const FileName: string; out LocalTime: TDateTime): Boolean; overload;
 function GetFileLastAccess(const FileName: string): TFileTime; overload;
@@ -273,7 +288,7 @@ function GetFileLastAccess(const FileName: string; out LocalTime: TDateTime): Bo
 function GetFileCreation(const FileName: string): TFileTime; overload;
 function GetFileCreation(const FileName: string; out LocalTime: TDateTime): Boolean; overload;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function GetFileLastWrite(const FileName: string; out TimeStamp: Integer; ResolveSymLinks: Boolean = True): Boolean; overload;
 function GetFileLastWrite(const FileName: string; out LocalTime: TDateTime; ResolveSymLinks: Boolean = True): Boolean; overload;
 function GetFileLastWrite(const FileName: string; ResolveSymLinks: Boolean = True): Integer; overload;
@@ -283,15 +298,15 @@ function GetFileLastAccess(const FileName: string; ResolveSymLinks: Boolean = Tr
 function GetFileLastAttrChange(const FileName: string; out TimeStamp: Integer; ResolveSymLinks: Boolean = True): Boolean; overload;
 function GetFileLastAttrChange(const FileName: string; out LocalTime: TDateTime; ResolveSymLinks: Boolean = True): Boolean; overload;
 function GetFileLastAttrChange(const FileName: string; ResolveSymLinks: Boolean = True): Integer; overload;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 function GetModulePath(const Module: HMODULE): string;
+{$IFDEF MSWINDOWS}
 function GetSizeOfFile(const FileName: string): Int64; overload;
 function GetSizeOfFile(const FileInfo: TSearchRec): Int64; overload;
-{$IFDEF MSWINDOWS}
 function GetSizeOfFile(Handle: THandle): Int64; overload;
 function GetStandardFileInfo(const FileName: string): TWin32FileAttributeData;
-{$ENDIF MSWINDOWS}
 function IsDirectory(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): Boolean;
+{$ENDIF MSWINDOWS}
 function IsRootDirectory(const CanonicFileName: string): Boolean;
 {$IFDEF MSWINDOWS}
 function LockVolume(const Volume: string; var Handle: THandle): Boolean;
@@ -299,20 +314,17 @@ function OpenVolume(const Drive: Char): THandle;
 function SetDirLastWrite(const DirName: string; const DateTime: TDateTime; RequireBackupRestorePrivileges: Boolean = True): Boolean;
 function SetDirLastAccess(const DirName: string; const DateTime: TDateTime; RequireBackupRestorePrivileges: Boolean = True): Boolean;
 function SetDirCreation(const DirName: string; const DateTime: TDateTime; RequireBackupRestorePrivileges: Boolean = True): Boolean;
-{$ENDIF MSWINDOWS}
 function SetFileLastWrite(const FileName: string; const DateTime: TDateTime): Boolean;
 function SetFileLastAccess(const FileName: string; const DateTime: TDateTime): Boolean;
-{$IFDEF MSWINDOWS}
 function SetFileCreation(const FileName: string; const DateTime: TDateTime): Boolean;
 procedure ShredFile(const FileName: string; Times: Integer = 1);
 function UnlockVolume(var Handle: THandle): Boolean;
 {$ENDIF MSWINDOWS}
-
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function CreateSymbolicLink(const Name, Target: string): Boolean;
 { This function gets the value of the symbolic link filename. }
 function SymbolicLinkTarget(const Name: string): string;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 // TJclFileAttributeMask
 //
@@ -572,6 +584,7 @@ type
 // TJclFileEnumerator
 //
 // Class for thread-based file search
+{$IFDEF MSWINDOWS}
 type
   TJclFileEnumerator = class(TJclFileSearchOptions, IInterface, IJclFileSearchOptions, IJclFileEnumerator)
   private
@@ -621,8 +634,6 @@ type
   end;
 
 function FileSearch: IJclFileEnumerator;
-
-{$IFDEF MSWINDOWS}
 
 // TFileVersionInfo
 //
@@ -765,13 +776,12 @@ procedure VersionExtractProductInfo(const FixedInfo: TVSFixedFileInfo; var Major
 function VersionFixedFileInfo(const FileName: string; var FixedInfo: TVSFixedFileInfo): Boolean;
 function VersionFixedFileInfoString(const FileName: string; VersionFormat: TFileVersionFormat = vfFull;
   const NotAvailableText: string = ''): string;
-
 {$ENDIF MSWINDOWS}
-
 // Streams
 //
 // TStream descendent classes for dealing with temporary files and for using file mapping objects.
 type
+{$IFDEF MSWINDOWS}
   TJclTempFileStream = class(THandleStream)
   private
     FFileName: string;
@@ -780,8 +790,6 @@ type
     destructor Destroy; override;
     property FileName: string read FFileName;
   end;
-
-{$IFDEF MSWINDOWS}
 
   TJclCustomFileMapping = class;
 
@@ -1124,6 +1132,7 @@ const
 
 //=== { TJclTempFileStream } =================================================
 
+{$IFDEF MSWINDOWS}
 constructor TJclTempFileStream.Create(const Prefix: string);
 var
   FileHandle: THandle;
@@ -1142,6 +1151,7 @@ begin
     FileClose(Handle);
   inherited Destroy;
 end;
+{$ENDIF}
 
 //=== { TJclFileMappingView } ================================================
 
@@ -2295,6 +2305,7 @@ begin
   {$ENDIF MSWINDOWS}
 end;
 
+{$IFDEF MSWINDOWS}
 function PathCanonicalize(const Path: string): string;
 var
   List: TStringList;
@@ -2344,6 +2355,7 @@ begin
   if Result = '' then
     Result := '.';
 end;
+{$ENDIF}
 
 function PathCommonPrefix(const Path1, Path2: string): Integer;
 var
@@ -2437,6 +2449,7 @@ begin
   Result := PathRemoveExtension(ExtractFileName(Path));
 end;
 
+{$IFDEF MSWINDOWS}
 function PathExtractPathDepth(const Path: string; Depth: Integer): string;
 var
   List: TStringList;
@@ -2490,8 +2503,6 @@ begin
     List.Free;
   end;
 end;
-
-{$IFDEF MSWINDOWS}
 
 function ShellGetLongPathName(const Path: string): string;
 {$IFDEF FPC}
@@ -2596,6 +2607,7 @@ end;
 
 {$ENDIF MSWINDOWS}
 
+{$IFNDEF UNIX}
 function PathGetRelativePath(Origin, Destination: string): string;
 var
   {$IFDEF MSWINDOWS}
@@ -2691,6 +2703,7 @@ begin
     end;
   end;
 end;
+{$ENDIF ~UNIX}
 
 function PathGetTempPath: string;
 {$IFDEF MSWINDOWS}
@@ -2782,8 +2795,8 @@ begin
   {$ENDIF UNIX}
 end;
 
+{$IFDEF HAS_UNIT_LIBC}
 function PathIsDiskDevice(const Path: string): Boolean;
-{$IFDEF UNIX}
 var
   FullPath: string;
   F: PIOFile;
@@ -2833,8 +2846,9 @@ begin
     FsTypes.Free;
   end;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 {$IFDEF MSWINDOWS}
+function PathIsDiskDevice(const Path: string): Boolean;
 begin
   Result := Copy(Path, 1, Length(PathDevicePrefix)) = PathDevicePrefix;
 end;
@@ -3386,12 +3400,12 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function DirectoryExists(const Name: string; ResolveSymLinks: Boolean): Boolean;
 begin
   Result := IsDirectory(Name, ResolveSymLinks);
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 function DiskInDrive(Drive: Char): Boolean;
@@ -3416,8 +3430,8 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-function FileCreateTemp(var Prefix: string): THandle;
 {$IFDEF MSWINDOWS}
+function FileCreateTemp(var Prefix: string): THandle;
 var
   TempName: string;
 begin
@@ -3435,7 +3449,8 @@ begin
   end;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function FileCreateTemp(var Prefix: string): THandle;
 var
   Template: string;
 begin
@@ -3458,8 +3473,9 @@ begin
   Result := mkstemp(PChar(Template));
   Prefix := Template;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
+{$IFDEF MSWINDOWS}
 function FileBackup(const FileName: string; Move: Boolean = False): Boolean;
 begin
   if Move then
@@ -3504,6 +3520,7 @@ begin
   end;
   {$ENDIF UNIX}
 end;
+{$ENDIF MSWINDOWS}
 
 function FileDateTime(const FileName: string): TDateTime;
 {$IFNDEF COMPILER10_UP}
@@ -3538,7 +3555,7 @@ end;
 {$IFDEF UNIX}
   { TODO : implement MoveToRecycleBin for appropriate Desktops (e.g. KDE) }
 begin
-  Result := remove(PChar(FileName)) <> -1;
+  Result := SysUtils.DeleteFile(FileName);
 end;
 {$ENDIF UNIX}
 
@@ -3556,13 +3573,14 @@ begin
     Result := (Attr <> $FFFFFFFF) and (Attr and FILE_ATTRIBUTE_DIRECTORY = 0);
     {$ELSE ~MSWINDOWS}
     // Attempt to access the file, doesn't matter how, using FileGetSize is as good as anything else.
-    Result := FileGetSize(FileName) <> -1;
+    Result := SysUtils.FileExists(FileName);
     {$ENDIF ~MSWINDOWS}
   end
   else
     Result := False;
 end;
 
+{$IFDEF MSWINDOWS}
 procedure FileHistory(const FileName: string; HistoryPath: string = ''; MaxHistoryCount: Integer = 100; MinFileDate:
     TDateTime = 0; ReplaceExtention: Boolean = true);
 
@@ -3611,7 +3629,6 @@ begin
   FileCopy(FileName, FirstFile, True);
 end;
 
-
 function FileMove(const ExistingFileName, NewFileName: string; ReplaceExisting: Boolean = False): Boolean;
 {$IFDEF MSWINDOWS}
 const
@@ -3622,7 +3639,7 @@ begin
   Result := MoveFileEx(PChar(ExistingFileName), PChar(NewFileName), Flag[ReplaceExisting]);
   {$ENDIF MSWINDOWS}
   {$IFDEF UNIX}
-  Result := __rename(PChar(ExistingFileName), PChar(NewFileName)) = 0;
+  Result := SysUtils.RenameFile(ExistingFileName, NewFileName);
   {$ENDIF UNIX}
   if not Result then
   begin
@@ -3643,6 +3660,7 @@ begin
     if FileBackup(FileName, False) then
       Result := FileMove(TempFileName, FileName, True);
 end;
+{$ENDIF}
 
 function GetBackupFileName(const FileName: string): string;
 var
@@ -3682,8 +3700,8 @@ begin
 end;
 {$ENDIF ~MSWINDOWS}
 
-function FileGetGroupName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 {$IFDEF MSWINDOWS}
+function FileGetGroupName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 var
   DomainName: WideString;
   TmpResult: WideString;
@@ -3706,7 +3724,8 @@ begin
   end;
 end;
 {$ENDIF ~MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function FileGetGroupName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 var
   Buf: TStatBuf64;
   ResultBuf: TGroup;
@@ -3721,10 +3740,10 @@ begin
     Result := ResultBuf.gr_name;
   end;
 end;
-{$ENDIF ~UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
-function FileGetOwnerName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 {$IFDEF MSWINDOWS}
+function FileGetOwnerName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 var
   DomainName: WideString;
   TmpResult: WideString;
@@ -3750,7 +3769,8 @@ begin
   end;
 end;
 {$ENDIF ~MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function FileGetOwnerName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 var
   Buf: TStatBuf64;
   ResultBuf: TPasswordRecord;
@@ -3765,10 +3785,10 @@ begin
     Result := ResultBuf.pw_name;
   end;
 end;
-{$ENDIF ~UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
-function FileGetSize(const FileName: string): Int64;
 {$IFDEF MSWINDOWS}
+function FileGetSize(const FileName: string): Int64;
 var
   FileAttributesEx: WIN32_FILE_ATTRIBUTE_DATA;
   OldMode: Cardinal;
@@ -3788,7 +3808,8 @@ begin
   end;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function FileGetSize(const FileName: string): Int64;
 var
   Buf: TStatBuf64;
 begin
@@ -3796,7 +3817,7 @@ begin
   if GetFileStatus(FileName, Buf, False) = 0 then
     Result := Buf.st_size;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 {$IFDEF FPC}
@@ -3807,8 +3828,8 @@ external kernel32 name 'GetTempFileNameA';
 {$ENDIF FPC}
 {$ENDIF MSWINDOWS}
 
-function FileGetTempName(const Prefix: string): string;
 {$IFDEF MSWINDOWS}
+function FileGetTempName(const Prefix: string): string;
 var
   TempPath, TempFile: string;
   R: Cardinal;
@@ -3827,7 +3848,8 @@ begin
   end;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function FileGetTempName(const Prefix: string): string;
 // Warning: Between the time the pathname is constructed and the file is created
 // another process might have created a file with the same name using tmpnam,
 // leading to a possible security hole. The implementation generates names which
@@ -3840,7 +3862,7 @@ begin
   Result := P;
   Libc.free(P);
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 function FileGetTypeName(const FileName: string): string;
@@ -4074,8 +4096,6 @@ begin
   end;
 end;
 
-{$ENDIF MSWINDOWS}
-
 function GetFileInformation(const FileName: string; out FileInfo: TSearchRec): Boolean;
 begin
   Result := FindFirst(FileName, faAnyFile, FileInfo) = 0;
@@ -4088,8 +4108,9 @@ begin
   if not GetFileInformation(FileName, Result) then
     RaiseLastOSError;
 end;
+{$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 
 { TODO -cHelp : Author: Robert Rossmair }
 
@@ -4102,7 +4123,7 @@ begin
     Result := lstat64(PChar(FileName), StatBuf);
 end;
 
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 
@@ -4122,7 +4143,7 @@ end;
 
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 
 function GetFileLastWrite(const FileName: string; out TimeStamp: Integer; ResolveSymLinks: Boolean): Boolean;
 var
@@ -4152,7 +4173,7 @@ begin
     Result := -1;
 end;
 
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 
@@ -4172,7 +4193,7 @@ end;
 
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 
 function GetFileLastAccess(const FileName: string; out TimeStamp: Integer; ResolveSymLinks: Boolean): Boolean;
 var
@@ -4202,7 +4223,7 @@ begin
     Result := -1;
 end;
 
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 
@@ -4222,7 +4243,7 @@ end;
 
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 
 function GetFileLastAttrChange(const FileName: string; out TimeStamp: Integer; ResolveSymLinks: Boolean): Boolean;
 var
@@ -4252,7 +4273,7 @@ begin
     Result := -1;
 end;
 
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 function GetModulePath(const Module: HMODULE): string;
 var
@@ -4273,8 +4294,8 @@ begin
   SetLength(Result, L);
 end;
 
-function GetSizeOfFile(const FileName: string): Int64;
 {$IFDEF MSWINDOWS}
+function GetSizeOfFile(const FileName: string): Int64;
 var
   FileAttributesEx: WIN32_FILE_ATTRIBUTE_DATA;
   Size: TJclULargeInteger;
@@ -4290,7 +4311,8 @@ begin
     RaiseLastOSError;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function GetSizeOfFile(const FileName: string): Int64;
 var
   Buf: TStatBuf64;
 begin
@@ -4298,7 +4320,7 @@ begin
     RaiseLastOSError;
   Result := Buf.st_size;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 function GetSizeOfFile(Handle: THandle): Int64; overload;
@@ -4308,16 +4330,15 @@ begin
   Size.LowPart := GetFileSize(Handle, @Size.HighPart);
   Result := Size.QuadPart;
 end;
-{$ENDIF MSWINDOWS}
 
 function GetSizeOfFile(const FileInfo: TSearchRec): Int64;
-{$IFDEF MSWINDOWS}
 begin
   Int64Rec(Result).Lo := FileInfo.FindData.nFileSizeLow;
   Int64Rec(Result).Hi := FileInfo.FindData.nFileSizeHigh;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
+function GetSizeOfFile(const FileInfo: TSearchRec): Int64;
 var
   Buf: TStatBuf64;
 begin
@@ -4329,7 +4350,7 @@ begin
   else
     Result := Buf.st_size
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 {$IFDEF MSWINDOWS}
 
@@ -4385,7 +4406,7 @@ begin
   Result := (R <> DWORD(-1)) and ((R and FILE_ATTRIBUTE_DIRECTORY) <> 0);
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function IsDirectory(const FileName: string; ResolveSymLinks: Boolean): Boolean;
 var
   Buf: TStatBuf64;
@@ -4394,10 +4415,10 @@ begin
   if GetFileStatus(FileName, Buf, ResolveSymLinks) = 0 then
     Result := S_ISDIR(Buf.st_mode);
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
-function IsRootDirectory(const CanonicFileName: string): Boolean;
 {$IFDEF MSWINDOWS}
+function IsRootDirectory(const CanonicFileName: string): Boolean;
 var
   I: Integer;
 begin
@@ -4406,6 +4427,7 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 {$IFDEF UNIX}
+function IsRootDirectory(const CanonicFileName: string): Boolean;
 begin
   Result := CanonicFileName = DirDelimiter;
 end;
@@ -4483,7 +4505,7 @@ begin
 end;
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 function SetFileTimesHelper(const FileName: string; const DateTime: TDateTime; Times: TFileTimes): Boolean;
 var
   FileTime: Integer;
@@ -4505,8 +4527,9 @@ begin
     Result := utime(PChar(FileName), @TimeBuf) = 0;
   end;
 end;
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
+{$IFDEF MSWINDOWS}
 function SetFileLastAccess(const FileName: string; const DateTime: TDateTime): Boolean;
 begin
   Result := SetFileTimesHelper(FileName, DateTime, ftLastAccess);
@@ -4516,8 +4539,6 @@ function SetFileLastWrite(const FileName: string; const DateTime: TDateTime): Bo
 begin
   Result := SetFileTimesHelper(FileName, DateTime, ftLastWrite);
 end;
-
-{$IFDEF MSWINDOWS}
 
 function SetFileCreation(const FileName: string; const DateTime: TDateTime): Boolean;
 begin
@@ -4654,7 +4675,7 @@ end;
 
 {$ENDIF MSWINDOWS}
 
-{$IFDEF UNIX}
+{$IFDEF HAS_UNIT_LIBC}
 
 function CreateSymbolicLink(const Name, Target: string): Boolean;
 begin
@@ -4679,7 +4700,7 @@ begin
   SetLength(Result, N);
 end;
 
-{$ENDIF UNIX}
+{$ENDIF HAS_UNIT_LIBC}
 
 //=== File Version info routines =============================================
 
@@ -4926,12 +4947,12 @@ end;
 {$ENDIF MSWINDOWS}
 
 // Version Info formatting
-function FormatVersionString(const HiV, LoV: Word): string;
+function FormatVersionString(const HiV, LoV: Word): string; overload;
 begin
   Result := Format('%u.%.2u', [HiV, LoV]);
 end;
 
-function FormatVersionString(const Major, Minor, Build, Revision: Word): string;
+function FormatVersionString(const Major, Minor, Build, Revision: Word): string; overload;
 begin
   Result := Format('%u.%u.%u.%u', [Major, Minor, Build, Revision]);
 end;
@@ -5029,7 +5050,6 @@ begin
   ExtractData;
 end;
 
-{$IFDEF MSWINDOWS}
 {$IFDEF FPC}
 constructor TJclFileVersionInfo.Create(const Window: HWND; Dummy: Pointer = nil);
 {$ELSE}
@@ -5046,7 +5066,6 @@ begin
   else
     raise EJclError.CreateResFmt(@RsEModuleNotValid, [Module]);
 end;
-{$ENDIF MSWINDOWS}
 
 destructor TJclFileVersionInfo.Destroy;
 begin
@@ -5512,7 +5531,6 @@ begin
   R := VerLanguageName(LangId, PChar(Result), MAX_PATH);
   SetLength(Result, R);
 end;
-
 {$ENDIF MSWINDOWS}
 
 //=== { TJclFileMaskComparator } =============================================
@@ -5836,6 +5854,7 @@ end;
 
 // author: Robert Rossmair
 
+{$IFNDEF UNIX}
 function CanonicalizedSearchPath(const Directory: string): string;
 begin
   Result := PathCanonicalize(Directory);
@@ -5848,6 +5867,7 @@ begin
   if Pos('.' + DirDelimiter, Result) = 1 then
     Result := Copy(Result, 3, Length(Result) - 2);
 end;
+{$ENDIF UNIX}
 
 procedure EnumFiles(const Path: string; HandleFile: TFileHandlerEx;
   RejectedAttributes: Integer; RequiredAttributes: Integer; Abort: PBoolean);
@@ -5912,6 +5932,7 @@ begin
   end;
 end;
 
+{$IFNDEF UNIX}
 procedure EnumDirectories(const Root: string; const HandleDirectory: TFileHandler;
   const IncludeHiddenDirectories: Boolean; const SubDirectoriesMask: string;
   Abort: PBoolean {$IFDEF UNIX}; ResolveSymLinks: Boolean {$ENDIF});
@@ -5962,6 +5983,7 @@ begin
 
   Process(RootDir);
 end;
+{$ENDIF ~UNIX}
 
 //=== { TJclCustomFileAttributeMask } ==============================================
 
@@ -6343,6 +6365,7 @@ end;
 
 //=== { TEnumFileThread } ====================================================
 
+{$IFDEF MSWINDOWS}
 type
   TEnumFileThread = class(TThread)
   private
@@ -6603,9 +6626,11 @@ begin
   else
     FileMasks.Assign(Value);
 end;
+{$ENDIF}
 
 //=== { TJclFileEnumerator } =================================================
 
+{$IFDEF MSWINDOWS}
 constructor TJclFileEnumerator.Create;
 begin
   inherited Create;
@@ -6788,6 +6813,7 @@ function FileSearch: IJclFileEnumerator;
 begin
   Result := TJclFileEnumerator.Create;
 end;
+{$ENDIF}
 
 function SamePath(const Path1, Path2: string): Boolean;
 begin

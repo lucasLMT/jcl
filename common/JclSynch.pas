@@ -100,6 +100,7 @@ type
 
   TJclWaitHandle = THandle;
 
+{$IFDEF MSWINDOWS}
   TJclDispatcherObject = class(TObject)
   private
     FExisted: Boolean;
@@ -257,6 +258,7 @@ type
     procedure EndRead;
     procedure EndWrite;
   end;
+  {$ENDIF MSWINDOWS}
 
   PMetSectSharedInfo = ^TMetSectSharedInfo;
   TMetSectSharedInfo = record
@@ -274,6 +276,7 @@ type
     SharedInfo: PMetSectSharedInfo;
   end;
 
+  {$IFDEF MSWINDOWS}
   TJclMeteredSection = class(TObject)
   private
     FMetSect: PMeteredSection;
@@ -326,8 +329,8 @@ function QueryCriticalSection(CS: TJclCriticalSection; var Info: TRTLCriticalSec
 function QueryEvent(Handle: THandle; var Info: TEventInfo): Boolean;
 function QueryMutex(Handle: THandle; var Info: TMutexInfo): Boolean;
 function QuerySemaphore(Handle: THandle; var Info: TSemaphoreCounts): Boolean;
-function QueryTimer(Handle: THandle; var Info: TTimerInfo): Boolean;
 
+function QueryTimer(Handle: THandle; var Info: TTimerInfo): Boolean;
 type
   // Exceptions
   EJclWin32HandleObjectError = class(EJclWin32Error);
@@ -340,6 +343,7 @@ type
   EJclMeteredSectionError = class(EJclError);
 
 function ValidateMutexName(const aName: string): string;
+{$ENDIF MSWINDOWS}
 
 
 {$IFDEF UNITVERSIONING}
@@ -362,7 +366,10 @@ uses
   {$ELSE ~HAS_UNITSCOPE}
   SysUtils,
   {$ENDIF ~HAS_UNITSCOPE}
-  JclLogic, JclRegistry, JclResources,
+  {$IFDEF MSWINDOWS}
+  JclRegistry,
+  {$ENDIF MSWINDOWS}
+  JclLogic, JclResources,
   JclSysInfo, JclStrings;
 
 const
@@ -757,6 +764,7 @@ end;
 
 //=== { TJclDispatcherObject } ===============================================
 
+{$IFDEF MSWINDOWS}
 function MapSignalResult(const Ret: DWORD): TJclWaitResult;
 begin
   case Ret of
@@ -1748,6 +1756,7 @@ function QueryTimer(Handle: THandle; var Info: TTimerInfo): Boolean;
 begin
   Result := CallQueryProc(_QueryTimer, 'NtQueryTimer', Handle, @Info, SizeOf(Info));
 end;
+{$ENDIF}
 
 function ValidateMutexName(const aName: string): string;
 const cMutexMaxName = 200;

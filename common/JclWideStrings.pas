@@ -288,7 +288,9 @@ function StrPLCopyW(Dest: PWideChar; const Source: AnsiString; MaxLen: SizeInt):
 function StrCatW(Dest: PWideChar; const Source: PWideChar): PWideChar;
 function StrLCatW(Dest: PWideChar; const Source: PWideChar; MaxLen: SizeInt): PWideChar;
 function StrCompW(const Str1, Str2: PWideChar): SizeInt;
+{$IFDEF MSWINDOWS}
 function StrICompW(const Str1, Str2: PWideChar): SizeInt;
+{$ENDIF}
 function StrLCompW(const Str1, Str2: PWideChar; MaxLen: SizeInt): SizeInt;
 function StrLICompW(const Str1, Str2: PWideChar; MaxLen: SizeInt): SizeInt;
 function StrLICompW2(const Str1, Str2: PWideChar; MaxLen: SizeInt): SizeInt;
@@ -528,6 +530,7 @@ begin
     Result := 0;
 end;
 
+{$IFDEF MSWINDOWS}
 function StrICompW(const Str1, Str2: PWideChar): SizeInt;
 // Compares Str1 to Str2 without case sensitivity.
 // See also comments in StrCompW, but keep in mind that case folding might result in
@@ -583,13 +586,14 @@ begin
     Result := (Run1 - PWideChar(Folded1)) - (Run2 - PWideChar(Folded2));
 end;
 {$ENDIF ~UNICODE_RTL_DATABASE}
+{$ENDIF MSWINDOWS}
 
 function StrLICompW(const Str1, Str2: PWideChar; MaxLen: SizeInt): SizeInt;
 // compares strings up to MaxLen code points
 // see also StrICompW
 {$IFDEF UNICODE_RTL_DATABASE}
 begin
-   Result := AnsiStrIComp(Str1, Str2)
+   Result := StrLICompW2(Str1, Str2, MaxLen)
 end;
 {$ELSE UNICODE_RTL_DATABASE}
 var

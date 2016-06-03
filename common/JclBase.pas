@@ -145,7 +145,7 @@ type
 
 // Redefinition of ULARGE_INTEGER to relieve dependency on Windows.pas
 type
-  {$IFNDEF FPC}
+  {.$IFNDEF FPC}
   PULARGE_INTEGER = ^ULARGE_INTEGER;
   {$EXTERNALSYM PULARGE_INTEGER}
   ULARGE_INTEGER = record
@@ -157,7 +157,7 @@ type
      (QuadPart: Int64);
   end;
   {$EXTERNALSYM ULARGE_INTEGER}
-  {$ENDIF ~FPC}
+  {.$ENDIF ~FPC}
   TJclULargeInteger = ULARGE_INTEGER;
   PJclULargeInteger = PULARGE_INTEGER;
 
@@ -354,8 +354,10 @@ function Addr64ToAddr32(const Value: TJclAddr64): TJclAddr32;
 function Addr32ToAddr64(const Value: TJclAddr32): TJclAddr64;
 
 {$IFDEF FPC}
-type
-  HWND = type Windows.HWND;
+  {$IFDEF MSWINDOWS}
+  type
+    HWND = type Windows.HWND;
+  {$ENDIF MSWINDOWS}
 {$ENDIF FPC}
 
  {$IFDEF SUPPORTS_GENERICS}
@@ -532,6 +534,10 @@ end;
 
 {$IFNDEF RTL230_UP}
 procedure CheckOSError(ErrorCode: Cardinal);
+{$IFDEF UNIX}
+const
+  ERROR_SUCCESS = 0;
+{$ENDIF}
 begin
   if ErrorCode <> ERROR_SUCCESS then
     {$IFDEF RTL170_UP}
