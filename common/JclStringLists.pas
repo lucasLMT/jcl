@@ -54,8 +54,7 @@ uses
   Variants,
   Classes, SysUtils,
   {$ENDIF ~HAS_UNITSCOPE}
-  JclBase,
-  JclPCRE;
+  JclBase;
 
 {$DEFINE HAS_TSTRINGS_COMPARESTRINGS}
 {$IFDEF FPC}
@@ -222,9 +221,9 @@ type
     FOwnerInterface: IInterface;
   public
     { IInterface }
-     function _AddRef: Integer; stdcall;
-     function _Release: Integer; stdcall;
-     function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} IID: TGUID; out Obj): HResult;  stdcall;
+     function _AddRef: Integer; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+     function _Release: Integer; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+     function QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} IID: TGUID; out Obj): HResult;  {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
      procedure AfterConstruction; override;
   end;
 
@@ -253,8 +252,8 @@ type
     destructor Destroy; override;
     { IInterface }
     // function QueryInterface(const IID: TGUID; out Obj): HRESULT; stdcall;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
+    function _AddRef: Integer; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
+    function _Release: Integer; {$IFDEF MSWINDOWS}stdcall{$ELSE}cdecl{$ENDIF};
     { IJclStringList }
     // function Add(const S: string): Integer; overload;
     // function AddObject(const S: string; AObject: TObject): Integer;
@@ -471,7 +470,7 @@ begin
 end;
 
 
-function TJclInterfacedStringList._AddRef: Integer;stdcall;
+function TJclInterfacedStringList._AddRef: Integer;
 begin
   if assigned(FOwnerInterface) then
     Result := FOwnerInterface._AddRef
@@ -480,7 +479,7 @@ begin
 end;
 
 
-function TJclInterfacedStringList._Release: Integer;stdcall;
+function TJclInterfacedStringList._Release: Integer;
 begin
   if assigned(FOwnerInterface) then
     Result := FOwnerInterface._Release
@@ -489,7 +488,7 @@ begin
 end;
 
 
-function TJclInterfacedStringList.QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} IID: TGUID; out Obj): HResult;stdcall;
+function TJclInterfacedStringList.QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} IID: TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

@@ -1374,12 +1374,12 @@ begin
   else
   begin
     case FEncoding of
-      seISO:
+      TJclAnsiStrEncoding.seISO:
         if FCaseSensitive then
           Result := AnsiStrSimpleHashConvert(AString)
         else
           Result := AnsiStrSimpleHashConvertI(AString);
-      seUTF8:
+      TJclAnsiStrEncoding.seUTF8:
         if FCaseSensitive then
           Result := AnsiStrSimpleHashConvertU(AString)
         else
@@ -1397,7 +1397,7 @@ begin
   else
   begin
     case FEncoding of
-      seISO, seUTF8:
+      TJclAnsiStrEncoding.seISO, TJclAnsiStrEncoding.seUTF8:
         if FCaseSensitive then
           Result := AnsiStrSimpleCompare(A, B)
         else
@@ -1418,7 +1418,7 @@ begin
   else
   begin
     case FEncoding of
-      seISO, seUTF8:
+      TJclAnsiStrEncoding.seISO, TJclAnsiStrEncoding.seUTF8:
         if FCaseSensitive then
           Result := AnsiStrSimpleEqualityCompare(A, B)
         else

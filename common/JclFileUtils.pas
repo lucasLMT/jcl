@@ -79,6 +79,8 @@ uses
   {$ELSE ~HAS_UNITSCOPE}
   {$IFDEF MSWINDOWS}
   Windows, JclWin32,
+  {$ELSE}
+  types,
   {$ENDIF MSWINDOWS}
   Classes, SysUtils,
   {$ENDIF ~HAS_UNITSCOPE}
@@ -222,9 +224,9 @@ function DiskInDrive(Drive: Char): Boolean;
 function DirectoryExists(const Name: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): Boolean;
 function FileCreateTemp(var Prefix: string): THandle;
 {$ENDIF MSWINDOWS}
-{$IFDEF HAS_UNIT_LIBC}
+{$IFDEF LINUX}
 function FileCreateTemp(var Prefix: string): THandle;
-{$ENDIF HAS_UNIT_LIBC}
+{$ENDIF LINUX}
 {$IFDEF MSWINDOWS}
 function FileBackup(const FileName: string; Move: Boolean = False): Boolean;
 function FileCopy(const ExistingFileName, NewFileName: string; ReplaceExisting: Boolean = False): Boolean;
@@ -260,9 +262,9 @@ function FileGetDisplayName(const FileName: string): string;
 function FileGetGroupName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 function FileGetOwnerName(const FileName: string {$IFDEF UNIX}; ResolveSymLinks: Boolean = True {$ENDIF}): string;
 function FileGetSize(const FileName: string): Int64;
-function FileGetTempName(const Prefix: string): string;
 function FileGetTypeName(const FileName: string): string;
 {$ENDIF MSWINDOWS}
+function FileGetTempName(const Prefix: string): string;
 function FindUnusedFileName(FileName: string; const FileExt: string; NumberPrefix: string = ''): string;
 function ForceDirectories(Name: string): Boolean;
 function GetDirectorySize(const Path: string): Int64;
@@ -280,7 +282,7 @@ function GetFileInformation(const FileName: string): TSearchRec; overload;
 function GetFileStatus(const FileName: string; out StatBuf: TStatBuf64;
   const ResolveSymLinks: Boolean): Integer;
 {$ENDIF HAS_UNIT_LIBC}
-{$IFDEF MSWINDOWS}  
+{$IFDEF MSWINDOWS}
 function GetFileLastWrite(const FileName: string): TFileTime; overload;
 function GetFileLastWrite(const FileName: string; out LocalTime: TDateTime): Boolean; overload;
 function GetFileLastAccess(const FileName: string): TFileTime; overload;
@@ -781,7 +783,6 @@ function VersionFixedFileInfoString(const FileName: string; VersionFormat: TFile
 //
 // TStream descendent classes for dealing with temporary files and for using file mapping objects.
 type
-{$IFDEF MSWINDOWS}
   TJclTempFileStream = class(THandleStream)
   private
     FFileName: string;
@@ -790,6 +791,8 @@ type
     destructor Destroy; override;
     property FileName: string read FFileName;
   end;
+
+  {$IFDEF MSWINDOWS}
 
   TJclCustomFileMapping = class;
 
@@ -1132,7 +1135,6 @@ const
 
 //=== { TJclTempFileStream } =================================================
 
-{$IFDEF MSWINDOWS}
 constructor TJclTempFileStream.Create(const Prefix: string);
 var
   FileHandle: THandle;
@@ -1151,7 +1153,6 @@ begin
     FileClose(Handle);
   inherited Destroy;
 end;
-{$ENDIF}
 
 //=== { TJclFileMappingView } ================================================
 
@@ -3178,7 +3179,6 @@ end;
 
 //=== Files and Directories ==================================================
 
-
 {* Extended version of JclFileUtils.BuildFileList:
    function parameter Path can include multiple FileMasks as:
    c:\aaa\*.pas; pro*.dpr; *.d??
@@ -3262,9 +3262,6 @@ begin
   else
     RaiseLastOSError;
 end;
-{$ENDIF MSWINDOWS}
-
-{$IFDEF MSWINDOWS}
 
 function CloseVolume(var Volume: THandle): Boolean;
 begin
@@ -3388,9 +3385,6 @@ begin
   end;
 end;
 
-{$ENDIF MSWINDOWS}
-
-{$IFDEF MSWINDOWS}
 function DirectoryExists(const Name: string): Boolean;
 var
   R: DWORD;
@@ -3428,9 +3422,7 @@ begin
     end;
   end;
 end;
-{$ENDIF MSWINDOWS}
 
-{$IFDEF MSWINDOWS}
 function FileCreateTemp(var Prefix: string): THandle;
 var
   TempName: string;
@@ -3449,7 +3441,12 @@ begin
   end;
 end;
 {$ENDIF MSWINDOWS}
-{$IFDEF HAS_UNIT_LIBC}
+{$IFDEF LINUX}
+Const
+  clib = 'c';
+
+function mkstemp(__template:Pchar):longint;cdecl;external clib name 'mkstemp';
+
 function FileCreateTemp(var Prefix: string): THandle;
 var
   Template: string;
@@ -3473,7 +3470,7 @@ begin
   Result := mkstemp(PChar(Template));
   Prefix := Template;
 end;
-{$ENDIF HAS_UNIT_LIBC}
+{$ENDIF LINUX}
 
 {$IFDEF MSWINDOWS}
 function FileBackup(const FileName: string; Move: Boolean = False): Boolean;
@@ -3828,8 +3825,8 @@ external kernel32 name 'GetTempFileNameA';
 {$ENDIF FPC}
 {$ENDIF MSWINDOWS}
 
-{$IFDEF MSWINDOWS}
 function FileGetTempName(const Prefix: string): string;
+{$IFDEF MSWINDOWS}
 var
   TempPath, TempFile: string;
   R: Cardinal;
@@ -3847,22 +3844,11 @@ begin
     end;
   end;
 end;
-{$ENDIF MSWINDOWS}
-{$IFDEF HAS_UNIT_LIBC}
-function FileGetTempName(const Prefix: string): string;
-// Warning: Between the time the pathname is constructed and the file is created
-// another process might have created a file with the same name using tmpnam,
-// leading to a possible security hole. The implementation generates names which
-// can hardly be predicted, but when opening the file you should use the O_EXCL
-// flag. Using tmpfile or mkstemp is a safe way to avoid this problem.
-var
-  P: PChar;
+{$ELSE}
 begin
-  P := tempnam(PChar(PathGetTempPath), PChar(Prefix));
-  Result := P;
-  Libc.free(P);
+  SysUtils.GetTempFileName(PathGetTempPath, Prefix);
 end;
-{$ENDIF HAS_UNIT_LIBC}
+{$ENDIF}
 
 {$IFDEF MSWINDOWS}
 function FileGetTypeName(const FileName: string): string;
