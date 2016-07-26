@@ -56,6 +56,7 @@
 //Threadsafe directive
 {.$DEFINE THREADSAFE}
 
+{$DEFINE SUPPORTS_FOR_IN}
 
 // To exclude obsolete code from compilation, remove the point from the line below
 {$DEFINE DROP_OBSOLETE_CODE}
