@@ -1,0 +1,6 @@
+#Lazarus files
+
+*.o
+*.ppu
+*.rsj
+*.bak
